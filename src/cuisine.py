@@ -144,9 +144,9 @@ class mode_sudo(object):
 def select_package( option=None ):
 	supported = ["apt"]
 	if not (option is None):
-		assert option in supported, "Option must be one of: %s"  % (supported)
+		assert option in supported, "Option must be one of: %s"  % supported
 		fabric.api.env["option_package"] = option
-	return (fabric.api.env["option_package"], supported)
+	return fabric.api.env["option_package"], supported
 
 # =============================================================================
 #
@@ -335,20 +335,20 @@ def file_local_read(location):
 def file_read(location):
 	"""Reads the *remote* file at the given location."""
 	# NOTE: We use base64 here to be sure to preserve the encoding (UNIX/DOC/MAC) of EOLs
-	return base64.b64decode(run('cat "%s" | base64' % (location)))
+	return base64.b64decode(run('cat "%s" | base64' % location))
 
 def file_exists(location):
 	"""Tests if there is a *remote* file at the given location."""
-	return run('test -e "%s" && echo OK ; true' % (location)) == "OK"
+	return run('test -e "%s" && echo OK ; true' % location) == "OK"
 
 def file_is_file(location):
-	return run("test -f '%s' && echo OK ; true" % (location)) == "OK"
+	return run("test -f '%s' && echo OK ; true" % location) == "OK"
 
 def file_is_dir(location):
-	return run("test -d '%s' && echo OK ; true" % (location)) == "OK"
+	return run("test -d '%s' && echo OK ; true" % location) == "OK"
 
 def file_is_link(location):
-	return run("test -L '%s' && echo OK ; true" % (location)) == "OK"
+	return run("test -L '%s' && echo OK ; true" % location) == "OK"
 
 def file_attribs(location, mode=None, owner=None, group=None, recursive=False):
 	"""Updates the mode/owner/group for the remote file at the given
@@ -448,13 +448,13 @@ def file_append(location, content, mode=None, owner=None, group=None):
 
 def file_unlink(path):
 	if file_exists(path):
-		run("unlink '%s'" % (path))
+		run("unlink '%s'" % path)
 
 def file_link(source, destination, symbolic=True, mode=None, owner=None, group=None):
 	"""Creates a (symbolic) link between source and destination on the remote host,
 	optionally setting its mode/owner/group."""
 	if file_exists(destination) and (not file_is_link(destination)):
-		raise Exception("Destination already exists and is not a link: %s" % (destination))
+		raise Exception("Destination already exists and is not a link: %s" % destination)
 	if file_is_link(destination):
 		file_unlink(destination)
 	if symbolic:
@@ -468,7 +468,7 @@ def file_sha256(location):
 	# NOTE: In some cases, sudo can output errors in here -- but the errors will
 	# appear before the result, so we simply split and get the last line to
 	# be on the safe side.
-	return run('sha256sum "%s" | cut -d" " -f1' % (location)).split("\n")[-1]
+	return run('sha256sum "%s" | cut -d" " -f1' % location).split("\n")[-1]
 
 # =============================================================================
 #
@@ -482,7 +482,7 @@ def dir_attribs(location, mode=None, owner=None, group=None, recursive=False):
 
 def dir_exists(location):
 	"""Tells if there is a remote directory at the given location."""
-	return run('test -d "%s" && echo OK ; true' % (location)).endswith("OK")
+	return run('test -d "%s" && echo OK ; true' % location).endswith("OK")
 
 def dir_ensure(location, recursive=False, mode=None, owner=None, group=None):
 	"""Ensures that there is a remote directory at the given location,
@@ -534,7 +534,7 @@ def package_upgrade_apt():
 	sudo("apt-get --yes upgrade")
 
 def package_update_apt(package=None):
-	if package == None:
+	if package is None:
 		sudo("apt-get --yes update")
 	else:
 		if type(package) in (list, tuple):
@@ -549,7 +549,7 @@ def package_install_apt(package, update=False):
 		sudo("apt-get --yes update")
 	if type(package) in (list, tuple):
 		package = " ".join(package)
-	sudo("apt-get --yes install %s" % (package))
+	sudo("apt-get --yes install %s" % package)
 
 def package_ensure_apt(package, update=False):
 	status = run("dpkg-query -W -f='${Status}' %s ; true" % package)
@@ -579,7 +579,7 @@ def command_ensure(command, package=None):
 	if not command_check(command):
 		package_install(package)
 	assert command_check(command), \
-		"Command was not installed, check for errors: %s" % (command)
+		"Command was not installed, check for errors: %s" % command
 
 # =============================================================================
 #
@@ -598,20 +598,20 @@ def user_create(name, passwd=None, home=None, uid=None, gid=None, shell=None,
 	specific password/home/uid/gid/shell."""
 	options = ["-m"]
 	if home:
-		options.append("-d '%s'" % (home))
+		options.append("-d '%s'" % home)
 	if uid:
-		options.append("-u '%s'" % (uid))
+		options.append("-u '%s'" % uid)
 	#if group exists already but is not specified, useradd fails
 	if not gid and group_check(name):
 		gid = name
 	if gid:
-		options.append("-g '%s'" % (gid))
+		options.append("-g '%s'" % gid)
 	if shell:
-		options.append("-s '%s'" % (shell))
+		options.append("-s '%s'" % shell)
 	if uid_min:
-		options.append("-K UID_MIN='%s'" % (uid_min))
+		options.append("-K UID_MIN='%s'" % uid_min)
 	if uid_max:
-		options.append("-K UID_MAX='%s'" % (uid_max))
+		options.append("-K UID_MAX='%s'" % uid_max)
 	sudo("useradd %s '%s'" % (" ".join(options), name))
 	if passwd:
 		user_passwd(name,passwd)
@@ -621,8 +621,8 @@ def user_check(name):
 	returning its information as a
 	'{"name":<str>,"uid":<str>,"gid":<str>,"home":<str>,"shell":<str>}'
 	or 'None' if the user does not exists."""
-	d = sudo("cat /etc/passwd | egrep '^%s:' ; true" % (name))
-	s = sudo("cat /etc/shadow | egrep '^%s:' | awk -F':' '{print $2}'" % (name))
+	d = sudo("cat /etc/passwd | egrep '^%s:' ; true" % name)
+	s = sudo("cat /etc/shadow | egrep '^%s:' | awk -F':' '{print $2}'" % name)
 	results = {}
 	if d:
 		d = d.split(":")
@@ -643,14 +643,14 @@ def user_ensure(name, passwd=None, home=None, uid=None, gid=None, shell=None):
 		user_create(name, passwd, home, uid, gid, shell)
 	else:
 		options = []
-		if home != None and d.get("home") != home:
-			options.append("-d '%s'" % (home))
-		if uid != None and d.get("uid") != uid:
-			options.append("-u '%s'" % (uid))
-		if gid != None and d.get("gid") != gid:
-			options.append("-g '%s'" % (gid))
-		if shell != None and d.get("shell") != shell:
-			options.append("-s '%s'" % (shell))
+		if home is not None and d.get("home") != home:
+			options.append("-d '%s'" % home)
+		if uid is not None and d.get("uid") != uid:
+			options.append("-u '%s'" % uid)
+		if gid is not None and d.get("gid") != gid:
+			options.append("-g '%s'" % gid)
+		if shell is not None and d.get("shell") != shell:
+			options.append("-s '%s'" % shell)
 		if options:
 			sudo("usermod %s '%s'" % (" ".join(options), name))
 		if passwd:
@@ -674,7 +674,7 @@ def group_create(name, gid=None):
 	"""Creates a group with the given name, and optionally given gid."""
 	options = []
 	if gid:
-		options.append("-g '%s'" % (gid))
+		options.append("-g '%s'" % gid)
 	sudo("groupadd %s '%s'" % (" ".join(options), name))
 
 def group_check(name):
@@ -682,7 +682,7 @@ def group_check(name):
 	returning its information as a
 	'{"name":<str>,"gid":<str>,"members":<list[str]>}' or 'None' if
 	the group does not exists."""
-	group_data = run("cat /etc/group | egrep '^%s:' ; true" % (name))
+	group_data = run("cat /etc/group | egrep '^%s:' ; true" % name)
 	if group_data:
 		name, _, gid, members = group_data.split(":", 4)
 		return dict(name=name, gid=gid,
@@ -697,7 +697,7 @@ def group_ensure(name, gid=None):
 	if not d:
 		group_create(name, gid)
 	else:
-		if gid != None and d.get("gid") != gid:
+		if gid is not None and d.get("gid") != gid:
 			sudo("groupmod -g %s '%s'" % (gid, name))
 
 def group_user_check(group, user):
@@ -711,7 +711,7 @@ def group_user_check(group, user):
 
 def group_user_add(group, user):
 	"""Adds the given user/list of users to the given group/groups."""
-	assert group_check(group), "Group does not exist: %s" % (group)
+	assert group_check(group), "Group does not exist: %s" % group
 	if not group_user_check(group, user):
 		sudo("usermod -a -G '%s' '%s'" % (group, user))
 
@@ -726,7 +726,7 @@ def group_user_ensure(group, user):
 def ssh_keygen(user, keytype="dsa"):
 	"""Generates a pair of ssh keys in the user's home .ssh directory."""
 	d = user_check(user)
-	assert d, "User does not exist: %s" % (user)
+	assert d, "User does not exist: %s" % user
 	home = d["home"]
 	key_file = home + "/.ssh/id_%s.pub" % keytype
 	if not file_exists(key_file):
