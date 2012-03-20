@@ -62,14 +62,14 @@ DEFAULT_OPTIONS = dict(
 #     pass
 
 def sudo_password(password):
-    global SUDO_PASSWORD
-    SUDO_PASSWORD= password
+	global SUDO_PASSWORD
+	SUDO_PASSWORD= password
 
 def mode_local():
 	"""Sets Cuisine into local mode, where run/sudo won't go through
 	Fabric's API, but directly through a popen. This allows you to
 	easily test your Cuisine scripts without using Fabric."""
-	global MODE_LOCAL, SUDO_PASSWORD	
+	global MODE_LOCAL, SUDO_PASSWORD
 	sudo_cmd = "sudo "
 	if not SUDO_PASSWORD is None:
 		sudo_cmd= "echo %s|sudo -S -p '' "%SUDO_PASSWORD
@@ -187,7 +187,7 @@ def dispatch(prefix=None):
 	"""Dispatches the current function to specific implementation. The `prefix`
 	parameter indicates the common option prefix, and the `option_select()`
 	function will determine the function suffix.
-	
+
 	For instance the package functions are defined like that:
 
 	{{{
@@ -199,7 +199,7 @@ def dispatch(prefix=None):
 	def package_ensure_yum(...):
 		...
 	}}}
-	
+
 	and then when a user does
 
 	{{{
@@ -207,7 +207,7 @@ def dispatch(prefix=None):
 	cuisine.package_ensure(...)
 	}}}
 
-	then the `dispatch` function will dispatch `package_ensure` to 
+	then the `dispatch` function will dispatch `package_ensure` to
 	`package_ensure_yum`.
 
 	If your prefix is the first word of the function name before the
@@ -657,7 +657,7 @@ def user_ensure(name, passwd=None, home=None, uid=None, gid=None, shell=None):
 			user_passwd(name, passwd)
 
 def user_remove(name, rmhome=None):
-	"""Removes the user with the given name, optionally 
+	"""Removes the user with the given name, optionally
 	removing the home directory and mail spool."""
 	options = ["-f"]
 	if rmhome:
