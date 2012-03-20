@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # Encoding: utf-8
 # See: <http://docs.python.org/distutils/introduction.html>
-from distutils.core import setup
-import os, sys
+from setuptools import setup
 VERSION = eval(filter(lambda _:_.startswith("VERSION"), file("src/cuisine.py").readlines())[0].split("=")[1])
 setup(
 	name             = "cuisine",
@@ -13,7 +12,7 @@ setup(
 	url              = "http://github.com/sebastien/cuisine",
 	download_url     = "https://github.com/sebastien/cuisine/tarball/%s" % (VERSION),
 	keywords         = ["fabric", "chef", "ssh",],
-	install_requires = ["fabric",],
+	install_requires = ["distribute", "fabric"],
 	package_dir      = {"":"src"},
 	py_modules       = ["cuisine"],
 	classifiers      = [
