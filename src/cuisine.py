@@ -407,7 +407,7 @@ def file_ensure(location, mode=None, owner=None, group=None, recursive=False):
 	else:
 		file_write(location,"",mode=mode,owner=owner,group=group)
 
-def file_upload(remote, local, sudo=None):
+def file_upload(remote, local, sudo=None, **kwargs):
 	"""Uploads the local file to the remote location only if the remote location does not
 	exists or the content are different."""
 	# FIXME: Big files are never transferred properly!
@@ -423,7 +423,7 @@ def file_upload(remote, local, sudo=None):
 			else:
 				run('cp "%s" "%s"'%(local,remote))
 		else:
-			fabric.operations.put(local, remote, use_sudo=sudo)
+			fabric.operations.put(local, remote, use_sudo=sudo, **kwargs)
 
 def file_update(location, updater=lambda x: x):
 	"""Updates the content of the given by passing the existing
