@@ -353,7 +353,7 @@ def file_is_link(location):
 def file_attribs(location, mode=None, owner=None, group=None, recursive=False):
 	"""Updates the mode/owner/group for the remote file at the given
 	location."""
-	recursive = recursive and "-R " or ""
+	recursive = "-R" if recursive else ""
 	if mode:
 		run('chmod %s %s "%s"' % (recursive, mode,  location))
 	if owner:
@@ -404,7 +404,7 @@ def file_ensure(location, mode=None, owner=None, group=None, recursive=False):
 	else:
 		file_write(location,"",mode=mode,owner=owner,group=group)
 
-def file_upload(remote, local, sudo=None, **kwargs):
+def file_upload(remote, local, use_sudo=False, **kwargs):
 	"""Uploads the local file to the remote location only if the remote location does not
 	exists or the content are different."""
 	# FIXME: Big files are never transferred properly!
@@ -412,15 +412,16 @@ def file_upload(remote, local, sudo=None, **kwargs):
 	content = f.read()
 	f.close()
 	sig     = hashlib.sha256(content).hexdigest()
-	if MODE_SUDO: sudo = MODE_SUDO
+	if MODE_SUDO:
+		use_sudo = MODE_SUDO
 	if not file_exists(remote) or sig != file_sha256(remote):
 		if MODE_LOCAL:
-			if sudo:
+			if use_sudo:
 				sudo('cp "%s" "%s"'%(local,remote))
 			else:
 				run('cp "%s" "%s"'%(local,remote))
 		else:
-			fabric.operations.put(local, remote, use_sudo=sudo, **kwargs)
+			fabric.operations.put(local, remote, use_sudo=use_sudo, **kwargs)
 
 def file_update(location, updater=lambda x: x):
 	"""Updates the content of the given by passing the existing
