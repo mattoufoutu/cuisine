@@ -38,10 +38,11 @@ See also:
 :license:   BSD, see LICENSE for more details.
 """
 
-import base64, bz2, crypt, hashlib, os, random, sys, re, string, tempfile, subprocess, types, functools
+from __future__ import with_statement
+import base64, bz2, hashlib, os, random, sys, re, string, tempfile, subprocess, types, functools
 import fabric, fabric.api, fabric.operations, fabric.context_managers
 
-VERSION     = "0.2.4"
+VERSION     = "0.2.6"
 
 RE_SPACES   = re.compile("[\s\t]+")
 MAC_EOL     = "\n"
@@ -142,7 +143,7 @@ class mode_sudo(object):
 # =============================================================================
 
 def select_package( option=None ):
-	supported = ["apt"]
+	supported = ["apt", "yum"]
 	if not (option is None):
 		assert option in supported, "Option must be one of: %s"  % supported
 		fabric.api.env["option_package"] = option
@@ -488,7 +489,8 @@ def dir_ensure(location, recursive=False, mode=None, owner=None, group=None):
 
 	If we are not updating the owner/group then this can be done as a single
 	ssh call, so use that method, otherwise set owner/group after creation."""
-	run('test -d "%s" || mkdir %s "%s" && echo OK ; true' % (location, recursive and "-p" or "", location))
+	if not dir_exists(location):
+		run('mkdir %s "%s" && echo OK ; true' % (recursive and "-p" or "", location))
 	if owner or group or mode:
 		dir_attribs(location, owner=owner, group=group, mode=mode)
 
@@ -520,6 +522,11 @@ def package_ensure(package, update=False):
 	"""Tests if the given package is installed, and installs it in
 	case it's not already there. If `update` is true, then the
 	package will be updated if it already exists."""
+
+@dispatch
+def package_clean(package=None):
+        """Clean the repository for un-needed files
+        ."""
 
 # -----------------------------------------------------------------------------
 # APT PACKAGE (DEBIAN/UBUNTU)
@@ -557,6 +564,50 @@ def package_ensure_apt(package, update=False):
 	else:
 		if update: package_update(package)
 		return True
+
+def package_clean_apt(package=None):
+    pass
+
+# -----------------------------------------------------------------------------
+# YUM PACKAGE (RedHat, CentOS)
+# added by Prune - 20120408 - v1.0
+# -----------------------------------------------------------------------------
+
+def repository_ensure_yum(repository):
+    pass
+
+def package_upgrade_yum():
+    sudo("yum --assumeyes update")
+
+def package_update_yum(package=None):
+    if package == None:
+        sudo("yum --assumeyes update")
+    else:
+        if type(package) in (list, tuple):
+            package = " ".join(package)
+        sudo("yum --assumeyes upgrade " + package)
+
+def package_upgrade_yum(package=None):
+    sudo("yum --assumeyes upgrade")
+
+def package_install_yum(package, update=False):
+    if update:
+        sudo("yum --assumeyes update")
+    if type(package) in (list, tuple):
+        package = " ".join(package)
+    sudo("yum --assumeyes install %s" % (package))
+
+def package_ensure_yum(package, update=False):
+    status = run("yum list installed %s ; true" % package)
+    if status.find("No matching Packages") != -1 or status.find(package) == -1:
+        package_install(package)
+        return False
+    else:
+        if update: package_update(package)
+        return True
+
+def package_clean_yum(package=None):
+    sudo("yum --assumeyes clean all")
 
 # =============================================================================
 #
@@ -718,6 +769,14 @@ def group_user_ensure(group, user):
 	d = group_check(group)
 	if user not in d["members"]:
 		group_user_add(group, user)
+
+def group_user_del(group, user):
+        """remove the given user from the given group."""
+        assert group_check(group), "Group does not exist: %s" % (group)
+        if group_user_check(group, user):
+                group_for_user = run("cat /etc/group | egrep -v '^%s:' | grep '%s' | awk -F':' '{print $1}' | grep -v %s; true" % (group, user, user)).splitlines()
+                if group_for_user:
+                        sudo("usermod -G '%s' '%s'" % (",".join(group_for_user), user))
 
 ### ssh_<operation> functions
 
